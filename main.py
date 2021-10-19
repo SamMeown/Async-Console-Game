@@ -28,20 +28,21 @@ def get_frame_size(frame):
 async def animate_spaceship(canvas, row, column, frames):
     frame_width, frame_height = get_frame_size(frames[0])
     row_max, col_max = curses.window.getmaxyx(canvas)
+    #  doubling frames
+    frames = [frame for frame in frames for _ in range(2)]
     for frame in cycle(frames):
-        for _ in range(2):
-            rd, cd, _ = read_controls(canvas)
-            new_row = row + rd
-            new_column = column + cd
-            if 1 <= new_row <= row_max - 1 - frame_height:
-                row = new_row
+        rd, cd, _ = read_controls(canvas)
+        new_row = row + rd
+        new_column = column + cd
+        if 1 <= new_row <= row_max - 1 - frame_height:
+            row = new_row
 
-            if 1 <= new_column <= col_max - 1 - frame_width:
-                column = new_column
+        if 1 <= new_column <= col_max - 1 - frame_width:
+            column = new_column
 
-            draw_frame(canvas, row, column, frame)
-            await asyncio.sleep(0)
-            draw_frame(canvas, row, column, frame, negative=True)
+        draw_frame(canvas, row, column, frame)
+        await asyncio.sleep(0)
+        draw_frame(canvas, row, column, frame, negative=True)
 
 
 async def blink(canvas, row, column, symbol='*', delay=0):
