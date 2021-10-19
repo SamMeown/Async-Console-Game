@@ -1,6 +1,7 @@
 # Async-Console-Game
 Just a simple, funny and beautiful spaceship console game made with *python* :rocket::dizzy:  
-![Game Screenshot](images/game-screenshot-1.png)  
+
+<img src="images/game-screenshot-1.png" alt="Game Screenshot" width="50%" />  
   
 
 ### How to run
