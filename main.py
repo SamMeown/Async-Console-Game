@@ -11,10 +11,13 @@ TIMES = [2.0, 0.3, 0.5, 0.3]
 
 STARS_NUM = 100
 
-rocket_frames = []
-for filename in (f'rocket_frame_{num}.txt' for num in range(1, 3)):
-    with open(f'frames/{filename}', 'r') as frame:
-        rocket_frames.append(frame.read())
+
+def get_rocket_frames():
+    rocket_frames = []
+    for filename in (f'rocket_frame_{num}.txt' for num in range(1, 3)):
+        with open(f'frames/{filename}', 'r') as frame:
+            rocket_frames.append(frame.read())
+    return rocket_frames
 
 
 def get_frame_size(frame):
@@ -110,7 +113,7 @@ def draw(canvas):
     coroutines.append(animate_spaceship(canvas,
                                         row_max // 2,
                                         col_max // 2,
-                                        rocket_frames))
+                                        get_rocket_frames()))
 
     while True:
         for coroutine in coroutines.copy():
