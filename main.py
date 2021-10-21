@@ -1,5 +1,6 @@
 import asyncio
 import curses
+import os
 import time
 from itertools import cycle
 from random import choice, randint
@@ -15,9 +16,18 @@ STARS_NUM = 100
 def get_rocket_frames():
     rocket_frames = []
     for filename in (f'rocket_frame_{num}.txt' for num in range(1, 3)):
-        with open(f'frames/{filename}', 'r') as frame:
+        with open(f'frames/rocket/{filename}', 'r') as frame:
             rocket_frames.append(frame.read())
     return rocket_frames
+
+
+def get_garbage_frames():
+    grabage_frames = []
+    garbage_dir = 'frames/garbage'
+    for filename in os.listdir(garbage_dir):
+        with open(os.path.join(garbage_dir, filename)) as frame:
+            grabage_frames.append(frame.read())
+    return grabage_frames
 
 
 def get_frame_size(frame):
@@ -43,6 +53,22 @@ async def animate_spaceship(canvas, row, column, frames):
         draw_frame(canvas, row, column, frame)
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, frame, negative=True)
+
+
+async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
+    """Animate garbage, flying from top to bottom. Column position will stay same, as specified on start."""
+    rows_number, columns_number = canvas.getmaxyx()
+
+    column = max(column, 0)
+    column = min(column, columns_number - 1)
+
+    row = 0
+
+    while row < rows_number:
+        draw_frame(canvas, row, column, garbage_frame)
+        await asyncio.sleep(0)
+        draw_frame(canvas, row, column, garbage_frame, negative=True)
+        row += speed
 
 
 async def blink(canvas, row, column, symbol='*', delay=0):
@@ -115,6 +141,9 @@ def draw(canvas):
                                         row_max // 2,
                                         col_max // 2,
                                         get_rocket_frames()))
+
+    garbage = choice(get_garbage_frames())
+    coroutines.append(fly_garbage(canvas, column=10, garbage_frame=garbage))
 
     while True:
         for coroutine in coroutines.copy():
