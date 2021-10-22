@@ -7,10 +7,13 @@ from random import choice, randint
 
 from curses_tools import draw_frame, read_controls
 
+
 TIC_TIMEOUT = 0.1
 TIMES = [2.0, 0.3, 0.5, 0.3]
 
 STARS_NUM = 100
+
+coroutines = []
 
 
 def get_rocket_frames():
@@ -56,7 +59,7 @@ async def animate_spaceship(canvas, row, column, frames):
 
 
 async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
-    """Animate garbage, flying from top to bottom. Column position will stay same, as specified on start."""
+    """Animate garbage, flying from top to bottom. Сolumn position will stay same, as specified on start."""
     rows_number, columns_number = canvas.getmaxyx()
 
     column = max(column, 0)
@@ -69,6 +72,18 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, garbage_frame, negative=True)
         row += speed
+
+
+async def fill_orbit_with_garbage(canvas):
+    global coroutines
+    _, col_max = curses.window.getmaxyx(canvas)
+    while True:
+        for _ in range(randint(15, 25)):
+            await asyncio.sleep(0)
+        garbage = choice(get_garbage_frames())
+        column = randint(1, col_max - 2)
+        coroutines.append(fly_garbage(canvas, column=column,
+                                      garbage_frame=garbage))
 
 
 async def blink(canvas, row, column, symbol='*', delay=0):
@@ -131,6 +146,7 @@ def draw(canvas):
     row_max, col_max = curses.window.getmaxyx(canvas)
     symbols = '+*.:'
 
+    global coroutines
     coroutines = [blink(canvas,
                         row=randint(1, row_max - 2),
                         column=randint(1, col_max - 2),
@@ -142,8 +158,7 @@ def draw(canvas):
                                         col_max // 2,
                                         get_rocket_frames()))
 
-    garbage = choice(get_garbage_frames())
-    coroutines.append(fly_garbage(canvas, column=10, garbage_frame=garbage))
+    coroutines.append(fill_orbit_with_garbage(canvas))
 
     while True:
         for coroutine in coroutines.copy():
