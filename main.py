@@ -138,10 +138,15 @@ async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0
         column += columns_speed
 
 
-def draw(canvas):
+def draw(stdscr):
     curses.curs_set(False)
+    stdscr.border()
+    stdscr.refresh()
+
+    stdscr_row_max, stdscr_col_max = curses.window.getmaxyx(stdscr)
+    canvas = curses.newwin(stdscr_row_max - 2, stdscr_col_max - 2, 1, 1)
+    canvas.keypad(True)
     canvas.nodelay(True)
-    canvas.border()
 
     row_max, col_max = curses.window.getmaxyx(canvas)
     symbols = '+*.:'
