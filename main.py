@@ -81,7 +81,8 @@ async def fill_orbit_with_garbage(canvas):
         for _ in range(randint(15, 25)):
             await asyncio.sleep(0)
         garbage = choice(get_garbage_frames())
-        column = randint(1, col_max - 2)
+        garbage_width, _ = get_frame_size(garbage)
+        column = randint(0, col_max - garbage_width)
         coroutines.append(fly_garbage(canvas, column=column,
                                       garbage_frame=garbage))
 
