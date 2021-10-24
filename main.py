@@ -6,7 +6,7 @@ from itertools import cycle
 from random import choice, randint
 
 from curses_tools import draw_frame, read_controls
-
+from physics import update_speed
 
 TIC_TIMEOUT = 0.1
 TIMES = [2.0, 0.3, 0.5, 0.3]
@@ -43,20 +43,43 @@ async def sleep(tics=1):
         await asyncio.sleep(0)
 
 
+def bound_move(row, column, row_speed, column_speed, row_max, column_max):
+    if row <= 0:
+        row = 0
+        row_speed = 0
+
+    if row >= row_max:
+        row = row_max
+        row_speed = 0
+
+    if column <= 0:
+        column = 0
+        column_speed = 0
+
+    if column >= column_max:
+        column = column_max
+        column_speed = 0
+
+    return row, column, row_speed, column_speed
+
+
 async def animate_spaceship(canvas, row, column, frames):
     frame_width, frame_height = get_frame_size(frames[0])
     row_max, col_max = curses.window.getmaxyx(canvas)
+    row_max -= frame_height
+    col_max -= frame_width
+
+    row_speed = column_speed = 0
+
     #  doubling frames
     frames = [frame for frame in frames for _ in range(2)]
     for frame in cycle(frames):
         rd, cd, _ = read_controls(canvas)
-        new_row = row + rd
-        new_column = column + cd
-        if 1 <= new_row <= row_max - 1 - frame_height:
-            row = new_row
+        row_speed, column_speed = update_speed(row_speed, column_speed, rd, cd)
 
-        if 1 <= new_column <= col_max - 1 - frame_width:
-            column = new_column
+        row = row + row_speed
+        column = column + column_speed
+        row, column, row_speed, column_speed = bound_move(row, column, row_speed, column_speed, row_max, col_max)
 
         draw_frame(canvas, row, column, frame)
         await asyncio.sleep(0)
