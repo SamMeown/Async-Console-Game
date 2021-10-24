@@ -38,6 +38,11 @@ def get_frame_size(frame):
     return max(len(row) for row in rows), len(rows)
 
 
+async def sleep(tics=1):
+    for _ in range(tics):
+        await asyncio.sleep(0)
+
+
 async def animate_spaceship(canvas, row, column, frames):
     frame_width, frame_height = get_frame_size(frames[0])
     row_max, col_max = curses.window.getmaxyx(canvas)
@@ -78,8 +83,7 @@ async def fill_orbit_with_garbage(canvas):
     global coroutines
     _, col_max = curses.window.getmaxyx(canvas)
     while True:
-        for _ in range(randint(15, 25)):
-            await asyncio.sleep(0)
+        await sleep(randint(15, 25))
         garbage = choice(get_garbage_frames())
         garbage_width, _ = get_frame_size(garbage)
         column = randint(0, col_max - garbage_width)
@@ -89,24 +93,19 @@ async def fill_orbit_with_garbage(canvas):
 
 async def blink(canvas, row, column, symbol='*', delay=0):
     canvas.addstr(row, column, symbol, curses.A_DIM)
-    for _ in range(delay):
-        await asyncio.sleep(0)
+    await sleep(delay)
     while True:
         canvas.addstr(row, column, symbol)
-        for _ in range(round(TIMES[1] / TIC_TIMEOUT)):
-            await asyncio.sleep(0)
+        await sleep(round(TIMES[1] / TIC_TIMEOUT))
 
         canvas.addstr(row, column, symbol, curses.A_BOLD)
-        for _ in range(round(TIMES[2] / TIC_TIMEOUT)):
-            await asyncio.sleep(0)
+        await sleep(round(TIMES[2] / TIC_TIMEOUT))
 
         canvas.addstr(row, column, symbol)
-        for _ in range(round(TIMES[3] / TIC_TIMEOUT)):
-            await asyncio.sleep(0)
+        await sleep(round(TIMES[3] / TIC_TIMEOUT))
 
         canvas.addstr(row, column, symbol, curses.A_DIM)
-        for _ in range(round(TIMES[0] / TIC_TIMEOUT)):
-            await asyncio.sleep(0)
+        await sleep(round(TIMES[0] / TIC_TIMEOUT))
 
 
 async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0):
