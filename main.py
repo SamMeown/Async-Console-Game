@@ -74,7 +74,7 @@ async def animate_spaceship(canvas, row, column, frames):
     #  doubling frames
     frames = [frame for frame in frames for _ in range(2)]
     for frame in cycle(frames):
-        rd, cd, _ = read_controls(canvas)
+        rd, cd, space_pressed = read_controls(canvas)
         row_speed, column_speed = update_speed(row_speed, column_speed, rd, cd)
 
         row = row + row_speed
@@ -82,6 +82,8 @@ async def animate_spaceship(canvas, row, column, frames):
         row, column, row_speed, column_speed = bound_move(row, column, row_speed, column_speed, row_max, col_max)
 
         draw_frame(canvas, row, column, frame)
+        if space_pressed:
+            coroutines.append(fire(canvas, row, column + frame_width // 2, rows_speed=-2))
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, frame, negative=True)
 
