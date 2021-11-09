@@ -4,6 +4,10 @@ import os
 import time
 from itertools import cycle
 from random import choice, randint
+import signal
+import sys
+
+from monitor import Monitor
 
 from curses_tools import draw_frame, read_controls
 from physics import update_speed
@@ -63,6 +67,20 @@ def bound_move(row, column, row_speed, column_speed, row_max, column_max):
     return row, column, row_speed, column_speed
 
 
+def _read_controls():
+    if not hasattr(_read_controls, 'monitor'):
+        _read_controls.monitor = Monitor()
+        _read_controls.monitor.start()
+        _read_controls.controls = 0, 0, False
+    controls = _read_controls.monitor.get_control_keys()
+    if controls:
+        row_direction = -1 if controls['up'] else 1 if controls['down'] else 0
+        col_direction = -1 if controls['left'] else 1 if controls['right'] else 0
+        space = controls['space']
+        _read_controls.controls = row_direction, col_direction, space
+    return _read_controls.controls
+
+
 async def animate_spaceship(canvas, row, column, frames):
     frame_width, frame_height = get_frame_size(frames[0])
     row_max, col_max = curses.window.getmaxyx(canvas)
@@ -74,7 +92,8 @@ async def animate_spaceship(canvas, row, column, frames):
     #  doubling frames
     frames = [frame for frame in frames for _ in range(2)]
     for frame in cycle(frames):
-        rd, cd, space_pressed = read_controls(canvas)
+        # rd, cd, space_pressed = read_controls(canvas)
+        rd, cd, space_pressed = _read_controls()
         row_speed, column_speed = update_speed(row_speed, column_speed, rd, cd)
 
         row = row + row_speed
@@ -204,6 +223,12 @@ def draw(stdscr):
     time.sleep(5)
 
 
+def signal_handler(signal, frame):
+    _read_controls.monitor.stop()
+    sys.exit(0)
+
+
 if __name__ == '__main__':
+    signal.signal(signal.SIGINT, signal_handler)
     curses.update_lines_cols()
     curses.wrapper(draw)
