@@ -1,3 +1,5 @@
+import signal
+import time
 from multiprocessing import Process, Pipe
 
 from pynput import keyboard
@@ -44,7 +46,6 @@ class KeyMonitor:
 
 class Monitor:
     def __init__(self):
-        self.monitor = None
         self.p = None
         self.conn = None
 
@@ -54,13 +55,25 @@ class Monitor:
         self.p.start()
 
     def stop(self):
-        self.monitor.stop()
+        # first try to exit gracefully
         self.p.terminate()
-        self.p.join(timeout=1)
+        self.p.join(timeout=2)
+        # if failed to exit gracefully then terminate
+        if self.p.exitcode is None:
+            self.p.terminate()
+            self.p.join()
 
     def monitor_control_keys(self, conn):
-        self.monitor = KeyMonitor(lambda state: conn.send(state))
-        self.monitor.run()
+        monitor = KeyMonitor(lambda state: conn.send(state))
+        signal.signal(signal.SIGTERM, self._sigterm_handler(monitor))
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        monitor.run()
+
+    def _sigterm_handler(self, monitor):
+        def sigterm_handler(sig, frame):
+            monitor.stop()
+            signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        return sigterm_handler
 
     def get_control_keys(self):
         keys = None
