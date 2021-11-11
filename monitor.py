@@ -1,5 +1,4 @@
 import signal
-import time
 from multiprocessing import Process, Pipe
 
 from pynput import keyboard
