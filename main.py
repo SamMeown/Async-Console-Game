@@ -173,11 +173,17 @@ async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0
     curses.beep()
 
     while 0 < row < max_row and 0 < column < max_column:
+        if collides_with_obstacle(round(row), round(column)):
+            return
         canvas.addstr(round(row), round(column), symbol)
         await asyncio.sleep(0)
         canvas.addstr(round(row), round(column), ' ')
         row += rows_speed
         column += columns_speed
+
+
+def collides_with_obstacle(obj_row, obj_column, obj_size_rows=1, obj_size_columns=1):
+    return any(obstacle.has_collision(obj_row, obj_column, obj_size_rows, obj_size_columns) for obstacle in obstacles)
 
 
 def draw(stdscr):
@@ -206,7 +212,8 @@ def draw(stdscr):
                                         get_rocket_frames()))
 
     coroutines.append(fill_orbit_with_garbage(canvas))
-    coroutines.append(show_obstacles(canvas, obstacles))
+    # to visualize obstacle frames
+    # coroutines.append(show_obstacles(canvas, obstacles))
 
     while True:
         for coroutine in coroutines.copy():
