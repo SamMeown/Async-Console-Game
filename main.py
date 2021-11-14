@@ -10,6 +10,7 @@ import sys
 
 from curses_tools import draw_frame
 from curses_tools import read_controls
+from obstacles import Obstacle, show_obstacles
 from physics import update_speed
 
 TIC_TIMEOUT = 0.1
@@ -18,6 +19,7 @@ TIMES = [2.0, 0.3, 0.5, 0.3]
 STARS_NUM = 100
 
 coroutines = []
+obstacles = []
 
 
 def get_rocket_frames():
@@ -103,14 +105,20 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
 
     column = max(column, 0)
     column = min(column, columns_number - 1)
-
     row = 0
+
+    frame_width, frame_height = get_frame_size(garbage_frame)
+    obstacle = Obstacle(row, column, frame_height, frame_width)
+    obstacles.append(obstacle)
 
     while row < rows_number:
         draw_frame(canvas, row, column, garbage_frame)
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, garbage_frame, negative=True)
         row += speed
+        obstacle.row = row
+
+    obstacles.remove(obstacle)
 
 
 async def fill_orbit_with_garbage(canvas):
@@ -198,6 +206,7 @@ def draw(stdscr):
                                         get_rocket_frames()))
 
     coroutines.append(fill_orbit_with_garbage(canvas))
+    coroutines.append(show_obstacles(canvas, obstacles))
 
     while True:
         for coroutine in coroutines.copy():
