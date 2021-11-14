@@ -5,6 +5,7 @@ import os
 import time
 from itertools import cycle
 from random import choice, randint
+from typing import Optional
 import signal
 import sys
 
@@ -20,6 +21,7 @@ STARS_NUM = 100
 
 coroutines = []
 obstacles = []
+obstacles_in_last_collisions = []
 
 
 def get_rocket_frames():
@@ -112,6 +114,10 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
     obstacles.append(obstacle)
 
     while row < rows_number:
+        if obstacle in obstacles_in_last_collisions:
+            obstacles.remove(obstacle)
+            obstacles_in_last_collisions.remove(obstacle)
+            return
         draw_frame(canvas, row, column, garbage_frame)
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, garbage_frame, negative=True)
@@ -173,7 +179,8 @@ async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0
     curses.beep()
 
     while 0 < row < max_row and 0 < column < max_column:
-        if collides_with_obstacle(round(row), round(column)):
+        if collided := get_collided_obstacle(round(row), round(column)):
+            obstacles_in_last_collisions.append(collided)
             return
         canvas.addstr(round(row), round(column), symbol)
         await asyncio.sleep(0)
@@ -184,6 +191,12 @@ async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0
 
 def collides_with_obstacle(obj_row, obj_column, obj_size_rows=1, obj_size_columns=1):
     return any(obstacle.has_collision(obj_row, obj_column, obj_size_rows, obj_size_columns) for obstacle in obstacles)
+
+
+def get_collided_obstacle(obj_row, obj_column, obj_size_rows=1, obj_size_columns=1) -> Optional[Obstacle]:
+    for obstacle in obstacles:
+        if obstacle.has_collision(obj_row, obj_column, obj_size_rows, obj_size_columns):
+            return obstacle
 
 
 def draw(stdscr):
