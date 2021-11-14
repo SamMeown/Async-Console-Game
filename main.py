@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import curses
 import os
@@ -7,9 +8,8 @@ from random import choice, randint
 import signal
 import sys
 
-from keyboard_tools import read_controls, stop_controls_reading
 from curses_tools import draw_frame
-# from curses_tools import read_controls
+from curses_tools import read_controls
 from physics import update_speed
 
 TIC_TIMEOUT = 0.1
@@ -67,6 +67,10 @@ def bound_move(row, column, row_speed, column_speed, row_max, column_max):
     return row, column, row_speed, column_speed
 
 
+def _read_controls(canvas):
+    return read_controls(canvas)
+
+
 async def animate_spaceship(canvas, row, column, frames):
     frame_width, frame_height = get_frame_size(frames[0])
     row_max, col_max = curses.window.getmaxyx(canvas)
@@ -79,7 +83,7 @@ async def animate_spaceship(canvas, row, column, frames):
     frames = [frame for frame in frames for _ in range(2)]
     for frame in cycle(frames):
         # rd, cd, space_pressed = read_controls(canvas)
-        rd, cd, space_pressed = read_controls()
+        rd, cd, space_pressed = _read_controls(canvas)
         row_speed, column_speed = update_speed(row_speed, column_speed, rd, cd)
 
         row = row + row_speed
@@ -209,12 +213,37 @@ def draw(stdscr):
     time.sleep(5)
 
 
+def _tear_down():
+    pass
+
+
 def signal_handler(signal, frame):
-    stop_controls_reading()
+    _tear_down()
     sys.exit(0)
+
+
+def create_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description='Funny console game'
+    )
+    parser.add_argument('-a', '--advanced-control', action='store_true', default=False,
+                        help='Use keyboard monitor to provide advanced spaceship control (experimental)')
+    return parser
 
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
+
+    arg_parser = create_parser()
+    args = arg_parser.parse_args()
+    if args.advanced_control:
+        from keyboard_tools import read_controls as read_controls_advanced, stop_controls_reading
+
+        def _read_controls_advanced(canvas):
+            return read_controls_advanced()
+
+        _read_controls = _read_controls_advanced
+        _tear_down = stop_controls_reading
+
     curses.update_lines_cols()
     curses.wrapper(draw)
