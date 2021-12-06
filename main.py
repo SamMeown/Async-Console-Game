@@ -118,7 +118,7 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
         if obstacle in obstacles_in_last_collisions:
             obstacles.remove(obstacle)
             obstacles_in_last_collisions.remove(obstacle)
-            coroutines.append(explode(canvas, row + rows_number // 2, column + columns_number // 2))
+            coroutines.append(explode(canvas, row + frame_height / 2, column + frame_width / 2))
             return
         draw_frame(canvas, row, column, garbage_frame)
         await asyncio.sleep(0)
