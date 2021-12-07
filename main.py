@@ -42,6 +42,12 @@ def get_garbage_frames():
     return grabage_frames
 
 
+def get_game_over_frame():
+    frame_dir = 'frames/game_over'
+    with open(os.path.join(frame_dir, 'game_over.txt'), 'r') as frame:
+        return frame.read()
+
+
 def get_frame_size(frame):
     rows = frame.split('\n')
     return max(len(row) for row in rows), len(rows)
@@ -95,6 +101,15 @@ async def animate_spaceship(canvas, row, column, frames):
         column = column + column_speed
         row, column, row_speed, column_speed = bound_move(row, column, row_speed, column_speed, row_max, col_max)
 
+        if collided := get_collided_obstacle(row, column, frame_height, frame_width):
+            obstacles_in_last_collisions.append(collided)
+            # First show explosion, then show game over.
+            # To synchronize obstacle and spaceship explosions, start the latter one tick later.
+            await asyncio.sleep(0)
+            await explode(canvas, row + frame_height / 2, column + frame_width / 2)
+            coroutines.append(show_gameover(canvas))
+            return
+
         draw_frame(canvas, row, column, frame)
         if space_pressed:
             coroutines.append(fire(canvas, row, column + frame_width // 2, rows_speed=-2))
@@ -139,6 +154,18 @@ async def fill_orbit_with_garbage(canvas):
         column = randint(0, col_max - garbage_width)
         coroutines.append(fly_garbage(canvas, column=column,
                                       garbage_frame=garbage))
+
+
+async def show_gameover(canvas):
+    row_max, col_max = curses.window.getmaxyx(canvas)
+    frame = get_game_over_frame()
+    frame_width, frame_height = get_frame_size(frame)
+    row = row_max / 2 - frame_height / 2
+    column = col_max / 2 - frame_width / 2
+
+    while True:
+        draw_frame(canvas, row, column, frame)
+        await asyncio.sleep(0)
 
 
 async def blink(canvas, row, column, symbol='*', delay=0):
