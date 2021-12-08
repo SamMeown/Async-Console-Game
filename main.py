@@ -234,9 +234,20 @@ def draw(stdscr):
     stdscr.refresh()
 
     stdscr_row_max, stdscr_col_max = curses.window.getmaxyx(stdscr)
-    canvas = curses.newwin(stdscr_row_max - 2, stdscr_col_max - 2, 1, 1)
+    canvas = curses.newwin(stdscr_row_max - 4, stdscr_col_max - 2, 1, 1)
     canvas.keypad(True)
     canvas.nodelay(True)
+
+    sub = stdscr.derwin(stdscr_row_max - 3, 0)
+    sub.border(curses.ACS_VLINE, curses.ACS_VLINE, curses.ACS_HLINE, curses.ACS_HLINE,
+               curses.ACS_SSSB, curses.ACS_SBSS)
+    sub.refresh()
+
+    sub_row_max, sub_col_max = curses.window.getmaxyx(sub)
+    sub.addstr(1, sub_col_max - 16, "YEAR: 2042")
+    phrase = "Armstrong got on the moon!"
+    sub.addstr(1, (sub_col_max - len(phrase)) // 2, phrase)
+    sub.refresh()
 
     row_max, col_max = curses.window.getmaxyx(canvas)
     symbols = '+*.:'
