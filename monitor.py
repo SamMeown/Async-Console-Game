@@ -1,7 +1,11 @@
+import logging
 import signal
 from multiprocessing import Process, Pipe
 
 from pynput import keyboard
+
+
+logging.disable(logging.WARN)
 
 
 class KeyMonitor:
