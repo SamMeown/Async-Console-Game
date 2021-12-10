@@ -228,6 +228,23 @@ def get_collided_obstacle(obj_row, obj_column, obj_size_rows=1, obj_size_columns
             return obstacle
 
 
+async def show_phrase(canvas, phrase, ticks):
+    sub_row_max, sub_col_max = curses.window.getmaxyx(canvas)
+
+    col = - len(phrase)
+    stop = (sub_col_max - len(phrase)) // 2
+
+    while col < stop:
+        draw_frame(canvas, 1, col, phrase)
+        await asyncio.sleep(0)
+        draw_frame(canvas, 1, col, phrase, negative=True)
+        col += 6
+
+    draw_frame(canvas, 1, col, phrase)
+    await sleep(ticks)
+    draw_frame(canvas, 1, col, phrase, negative=True)
+
+
 def draw(stdscr):
     curses.curs_set(False)
     stdscr.border()
@@ -244,9 +261,9 @@ def draw(stdscr):
     sub.refresh()
 
     sub_row_max, sub_col_max = curses.window.getmaxyx(sub)
-    sub.addstr(1, sub_col_max - 16, "YEAR: 2042")
-    phrase = "Armstrong got on the moon!"
-    sub.addstr(1, (sub_col_max - len(phrase)) // 2, phrase)
+    sub.addstr(1, sub_col_max - 16, "Year: 2042")
+    # phrase = "Armstrong got on the moon!"
+    # sub.addstr(1, (sub_col_max - len(phrase)) // 2, phrase)
     sub.refresh()
 
     row_max, col_max = curses.window.getmaxyx(canvas)
@@ -268,6 +285,9 @@ def draw(stdscr):
     # to visualize obstacle frames
     # coroutines.append(show_obstacles(canvas, obstacles))
 
+    phrase = "Armstrong got on the moon!"
+    coroutines.append(show_phrase(sub, phrase, 20))
+
     while True:
         for coroutine in coroutines.copy():
             try:
@@ -277,6 +297,7 @@ def draw(stdscr):
         if not coroutines:
             break
         canvas.refresh()
+        sub.refresh()
         time.sleep(TIC_TIMEOUT)
 
     time.sleep(5)
@@ -301,6 +322,8 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 if __name__ == '__main__':
+
+
     signal.signal(signal.SIGINT, signal_handler)
 
     arg_parser = create_parser()
