@@ -55,7 +55,11 @@ def get_frame_size(frame):
 
 async def sleep(tics=1):
     for _ in range(tics):
-        await asyncio.sleep(0)
+        try:
+            await asyncio.sleep(0)
+        except asyncio.CancelledError:
+            await asyncio.sleep(0)
+            break
 
 
 def bound_move(row, column, row_speed, column_speed, row_max, column_max):
@@ -228,7 +232,7 @@ def get_collided_obstacle(obj_row, obj_column, obj_size_rows=1, obj_size_columns
             return obstacle
 
 
-async def show_phrase(canvas, phrase, ticks):
+async def _show_phrase(canvas, phrase, ticks):
     sub_row_max, sub_col_max = curses.window.getmaxyx(canvas)
 
     col = - len(phrase)
@@ -243,6 +247,21 @@ async def show_phrase(canvas, phrase, ticks):
     draw_frame(canvas, 1, col, phrase)
     await sleep(ticks)
     draw_frame(canvas, 1, col, phrase, negative=True)
+
+
+def show_phrase(canvas, phrase, ticks):
+    if last_phrase := getattr(show_phrase, 'last_phrase', None):
+        if last_phrase in coroutines:
+            last_phrase.throw(asyncio.CancelledError)
+    show_phrase.last_phrase = _show_phrase(canvas, phrase, ticks)
+    coroutines.append(show_phrase.last_phrase)
+
+
+# Test
+async def show_phrases(canvas):
+    show_phrase(canvas, 'Phrase 1', 100)
+    await sleep(50)
+    show_phrase(canvas, 'Phrase 2', 100)
 
 
 def draw(stdscr):
@@ -286,7 +305,8 @@ def draw(stdscr):
     # coroutines.append(show_obstacles(canvas, obstacles))
 
     phrase = "Armstrong got on the moon!"
-    coroutines.append(show_phrase(sub, phrase, 20))
+    # coroutines.append(show_phrase(sub, phrase, 20))
+    coroutines.append(show_phrases(sub))
 
     while True:
         for coroutine in coroutines.copy():
