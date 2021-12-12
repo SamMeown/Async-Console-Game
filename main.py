@@ -55,11 +55,7 @@ def get_frame_size(frame):
 
 async def sleep(tics=1):
     for _ in range(tics):
-        try:
-            await asyncio.sleep(0)
-        except asyncio.CancelledError:
-            await asyncio.sleep(0)
-            break
+        await asyncio.sleep(0)
 
 
 def bound_move(row, column, row_speed, column_speed, row_max, column_max):
@@ -238,15 +234,19 @@ async def _show_phrase(canvas, phrase, ticks):
     col = - len(phrase)
     stop = (sub_col_max - len(phrase)) // 2
 
-    while col < stop:
-        draw_frame(canvas, 1, col, phrase)
-        await asyncio.sleep(0)
-        draw_frame(canvas, 1, col, phrase, negative=True)
-        col += 6
+    try:
+        while col < stop:
+            draw_frame(canvas, 1, col, phrase)
+            await asyncio.sleep(0)
+            draw_frame(canvas, 1, col, phrase, negative=True)
+            col += 6
 
-    draw_frame(canvas, 1, col, phrase)
-    await sleep(ticks)
-    draw_frame(canvas, 1, col, phrase, negative=True)
+        draw_frame(canvas, 1, col, phrase)
+        await sleep(ticks)
+        draw_frame(canvas, 1, col, phrase, negative=True)
+    except asyncio.CancelledError:
+        draw_frame(canvas, 1, col, phrase, negative=True)
+        await asyncio.sleep(0)
 
 
 def show_phrase(canvas, phrase, ticks):
