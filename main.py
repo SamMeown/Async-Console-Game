@@ -236,16 +236,16 @@ async def _show_phrase(canvas, phrase, ticks):
 
     try:
         while col < stop:
-            draw_frame(canvas, 1, col, phrase)
+            draw_frame(canvas, 0, col, phrase)
             await asyncio.sleep(0)
-            draw_frame(canvas, 1, col, phrase, negative=True)
+            draw_frame(canvas, 0, col, phrase, negative=True)
             col += 6
 
-        draw_frame(canvas, 1, col, phrase)
+        draw_frame(canvas, 0, col, phrase)
         await sleep(ticks)
-        draw_frame(canvas, 1, col, phrase, negative=True)
+        draw_frame(canvas, 0, col, phrase, negative=True)
     except asyncio.CancelledError:
-        draw_frame(canvas, 1, col, phrase, negative=True)
+        draw_frame(canvas, 0, col, phrase, negative=True)
         await asyncio.sleep(0)
 
 
@@ -266,21 +266,22 @@ async def show_phrases(canvas):
 
 def draw(stdscr):
     curses.curs_set(False)
-    stdscr.border()
-    stdscr.refresh()
 
     stdscr_row_max, stdscr_col_max = curses.window.getmaxyx(stdscr)
+    stdscr.border()
+    stdscr.hline(stdscr_row_max - 3, 1, curses.ACS_HLINE, stdscr_col_max - 1)
+    stdscr.addch(stdscr_row_max - 3, 0, curses.ACS_SSSB)
+    stdscr.addch(stdscr_row_max - 3, stdscr_col_max - 1, curses.ACS_SBSS)
+    stdscr.refresh()
+
     canvas = curses.newwin(stdscr_row_max - 4, stdscr_col_max - 2, 1, 1)
     canvas.keypad(True)
     canvas.nodelay(True)
 
-    sub = stdscr.derwin(stdscr_row_max - 3, 0)
-    sub.border(curses.ACS_VLINE, curses.ACS_VLINE, curses.ACS_HLINE, curses.ACS_HLINE,
-               curses.ACS_SSSB, curses.ACS_SBSS)
-    sub.refresh()
+    sub = stdscr.derwin(1, stdscr_col_max - 2, stdscr_row_max - 2, 1)
 
     sub_row_max, sub_col_max = curses.window.getmaxyx(sub)
-    sub.addstr(1, sub_col_max - 16, "Year: 2042")
+    sub.addstr(0, sub_col_max - 12, "Year: 2042")
     # phrase = "Armstrong got on the moon!"
     # sub.addstr(1, (sub_col_max - len(phrase)) // 2, phrase)
     sub.refresh()
