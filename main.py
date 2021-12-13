@@ -12,10 +12,12 @@ import sys
 from curses_tools import draw_frame
 from curses_tools import read_controls
 from explosion import explode
+from game_scenario import get_garbage_delay_tics, PHRASES
 from obstacles import Obstacle, show_obstacles
 from physics import update_speed
 
 TIC_TIMEOUT = 0.1
+TICS_PER_YEAR = 10
 TIMES = [2.0, 0.3, 0.5, 0.3]
 
 STARS_NUM = 100
@@ -23,6 +25,9 @@ STARS_NUM = 100
 coroutines = []
 obstacles = []
 obstacles_in_last_collisions = []
+
+year = 1957
+plasma_unblocked = False
 
 
 def get_rocket_frames():
@@ -111,7 +116,7 @@ async def animate_spaceship(canvas, row, column, frames):
             return
 
         draw_frame(canvas, row, column, frame)
-        if space_pressed:
+        if space_pressed and plasma_unblocked:
             coroutines.append(fire(canvas, row, column + frame_width // 2, rows_speed=-2))
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, frame, negative=True)
@@ -148,7 +153,9 @@ async def fill_orbit_with_garbage(canvas):
     global coroutines
     _, col_max = curses.window.getmaxyx(canvas)
     while True:
-        await sleep(randint(15, 25))
+        delay_tics = get_garbage_delay_tics(year)
+        assert delay_tics is not None
+        await sleep(delay_tics)
         garbage = choice(get_garbage_frames())
         garbage_width, _ = get_frame_size(garbage)
         column = randint(0, col_max - garbage_width)
@@ -228,6 +235,33 @@ def get_collided_obstacle(obj_row, obj_column, obj_size_rows=1, obj_size_columns
             return obstacle
 
 
+async def run_scenario(canvas, footer_canvas):
+    global year
+    year = 1957
+
+    while True:
+        _show_year(footer_canvas, year)
+        if phrase := PHRASES.get(year):
+            show_phrase(footer_canvas, phrase, 40)
+        if year == 1961:
+            coroutines.append(fill_orbit_with_garbage(canvas))
+            # to visualize obstacle frames
+            # coroutines.append(show_obstacles(canvas, obstacles))
+        if year == 2025:
+            global plasma_unblocked
+            plasma_unblocked = True
+            show_phrase(footer_canvas, "Take the plasma gun! Shoot the garbage!", 999999)
+
+        await sleep(TICS_PER_YEAR)
+
+        year += 1
+
+
+def _show_year(canvas, _year):
+    _, col_max = curses.window.getmaxyx(canvas)
+    canvas.addstr(0, col_max - 12, f"Year: {_year}")
+
+
 async def _show_phrase(canvas, phrase, ticks):
     sub_row_max, sub_col_max = curses.window.getmaxyx(canvas)
 
@@ -257,13 +291,6 @@ def show_phrase(canvas, phrase, ticks):
     coroutines.append(show_phrase.last_phrase)
 
 
-# Test
-async def show_phrases(canvas):
-    show_phrase(canvas, 'Phrase 1', 100)
-    await sleep(50)
-    show_phrase(canvas, 'Phrase 2', 100)
-
-
 def draw(stdscr):
     curses.curs_set(False)
 
@@ -280,12 +307,6 @@ def draw(stdscr):
 
     sub = stdscr.derwin(1, stdscr_col_max - 2, stdscr_row_max - 2, 1)
 
-    sub_row_max, sub_col_max = curses.window.getmaxyx(sub)
-    sub.addstr(0, sub_col_max - 12, "Year: 2042")
-    # phrase = "Armstrong got on the moon!"
-    # sub.addstr(1, (sub_col_max - len(phrase)) // 2, phrase)
-    sub.refresh()
-
     row_max, col_max = curses.window.getmaxyx(canvas)
     symbols = '+*.:'
 
@@ -301,13 +322,7 @@ def draw(stdscr):
                                         col_max // 2,
                                         get_rocket_frames()))
 
-    coroutines.append(fill_orbit_with_garbage(canvas))
-    # to visualize obstacle frames
-    # coroutines.append(show_obstacles(canvas, obstacles))
-
-    phrase = "Armstrong got on the moon!"
-    # coroutines.append(show_phrase(sub, phrase, 20))
-    coroutines.append(show_phrases(sub))
+    coroutines.append(run_scenario(canvas, sub))
 
     while True:
         for coroutine in coroutines.copy():
@@ -343,7 +358,6 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 if __name__ == '__main__':
-
 
     signal.signal(signal.SIGINT, signal_handler)
 
