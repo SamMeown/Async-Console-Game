@@ -30,9 +30,9 @@ year = 1957
 plasma_unblocked = False
 
 
-def get_rocket_frames():
+def get_rocket_frames(kind: str):
     rocket_frames = []
-    for filename in (f'rocket_frame_{num}.txt' for num in range(1, 3)):
+    for filename in (f'rocket_frame_{kind}_{num}.txt' for num in range(1, 3)):
         with open(f'frames/rocket/{filename}', 'r') as frame:
             rocket_frames.append(frame.read())
     return rocket_frames
@@ -88,16 +88,20 @@ def _read_controls(canvas):
 
 
 async def animate_spaceship(canvas, row, column, frames):
-    frame_width, frame_height = get_frame_size(frames[0])
+    basic_frames = frames['basic']
+    plasma_frames = frames['plasma']
+    frame_width, frame_height = get_frame_size(plasma_frames[0])
     row_max, col_max = curses.window.getmaxyx(canvas)
     row_max -= frame_height
     col_max -= frame_width
 
     row_speed = column_speed = 0
 
-    #  doubling frames
-    frames = [frame for frame in frames for _ in range(2)]
-    for frame in cycle(frames):
+    #  "doubling" frames
+    frame_nums = range(len(plasma_frames))
+    frame_nums = [num for num in frame_nums for _ in range(2)]
+    for frame_num in cycle(frame_nums):
+        frame = (basic_frames if not plasma_unblocked else plasma_frames)[frame_num]
         # rd, cd, space_pressed = read_controls(canvas)
         rd, cd, space_pressed = _read_controls(canvas)
         row_speed, column_speed = update_speed(row_speed, column_speed, rd, cd)
@@ -320,7 +324,8 @@ def draw(stdscr):
     coroutines.append(animate_spaceship(canvas,
                                         row_max // 2,
                                         col_max // 2,
-                                        get_rocket_frames()))
+                                        {'basic': get_rocket_frames('basic'),
+                                         'plasma': get_rocket_frames('plasma')}))
 
     coroutines.append(run_scenario(canvas, sub))
 
