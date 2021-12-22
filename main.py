@@ -28,6 +28,7 @@ obstacles_in_last_collisions = []
 
 year = 1957
 plasma_unblocked = False
+game_over = False
 
 
 def get_rocket_frames(kind: str):
@@ -87,6 +88,12 @@ def _read_controls(canvas):
     return read_controls(canvas)
 
 
+def finish_game(canvas):
+    global game_over
+    game_over = True
+    coroutines.append(show_gameover(canvas))
+
+
 async def animate_spaceship(canvas, row, column, frames):
     basic_frames = frames['basic']
     plasma_frames = frames['plasma']
@@ -116,7 +123,7 @@ async def animate_spaceship(canvas, row, column, frames):
             # To synchronize obstacle and spaceship explosions, start the latter one tick later.
             await asyncio.sleep(0)
             await explode(canvas, row + frame_height / 2, column + frame_width / 2)
-            coroutines.append(show_gameover(canvas))
+            finish_game(canvas)
             return
 
         draw_frame(canvas, row, column, frame)
@@ -243,7 +250,7 @@ async def run_scenario(canvas, footer_canvas):
     global year
     year = 1957
 
-    while True:
+    while not game_over:
         _show_year(footer_canvas, year)
         if phrase := PHRASES.get(year):
             show_phrase(footer_canvas, phrase, 40)
