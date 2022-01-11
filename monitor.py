@@ -56,9 +56,10 @@ class Monitor:
         self.conn, c_conn = Pipe()
         self.p = Process(target=self.monitor_control_keys, args=(c_conn,))
         self.p.start()
+        c_conn.close()
 
     def stop(self):
-        # first try to exit gracefully
+        # first try to exit gracefully (via custom sigterm handler)
         self.p.terminate()
         self.p.join(timeout=2)
         # if failed to exit gracefully then terminate
