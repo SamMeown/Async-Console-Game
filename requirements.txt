@@ -1,0 +1,2 @@
+# Need this package for better controls handling (experimental feature)
+pynput==1.7.4
