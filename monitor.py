@@ -75,8 +75,8 @@ class Monitor:
 
     def _sigterm_handler(self, monitor):
         def sigterm_handler(sig, frame):
-            monitor.stop()
             signal.signal(signal.SIGTERM, signal.SIG_DFL)
+            monitor.stop()
         return sigterm_handler
 
     def get_control_keys(self):
